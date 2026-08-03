@@ -7,7 +7,7 @@ import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 const loginSchema = z.union([
   z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.string().email('You have to enter a valid email address.'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     role: z.enum(['leader', 'head', 'hr']).optional(),
   }),
