@@ -1,0 +1,80 @@
+// Prisma schema for SIC Community Management System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Track {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String            @unique @db.VarChar
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  users             User[]
+  technical_members TechnicalMember[]
+
+  @@map("tracks")
+}
+
+model User {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String        @db.VarChar
+  phone         String        @db.VarChar
+  email         String        @db.VarChar
+  password_hash String        @db.VarChar
+  role          String        @db.VarChar
+  head_type     String?       @db.VarChar
+  track_id      String?       @db.Uuid
+  is_active     Boolean       @default(true)
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  tracks        Track?        @relation(fields: [track_id], references: [id], onDelete: SetNull)
+  evaluations   Evaluation[]  @relation("Evaluator")
+  activity_logs ActivityLog[]
+
+  @@map("users")
+}
+
+model TechnicalMember {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @db.VarChar
+  phone       String       @db.VarChar
+  email       String       @db.VarChar
+  track_id    String?      @db.Uuid
+  created_at  DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?    @default(now()) @db.Timestamptz(6)
+  tracks      Track?       @relation(fields: [track_id], references: [id], onDelete: SetNull)
+  evaluations Evaluation[]
+
+  @@map("technical_members")
+}
+
+model Evaluation {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  task_name           String          @db.VarChar
+  technical_member_id String          @db.Uuid
+  evaluator_id        String?         @db.Uuid
+  score               Float           @db.DoublePrecision
+  max_score           Float           @default(100) @db.DoublePrecision
+  notes               String?         @db.Text
+  created_at          DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?       @default(now()) @db.Timestamptz(6)
+  technical_members   TechnicalMember @relation(fields: [technical_member_id], references: [id], onDelete: Cascade)
+  users               User?           @relation("Evaluator", fields: [evaluator_id], references: [id], onDelete: SetNull)
+
+  @@map("evaluations")
+}
+
+model ActivityLog {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String?   @db.Uuid
+  action      String    @db.VarChar
+  entity_type String    @db.VarChar
+  entity_id   String    @db.VarChar
+  description String    @db.Text
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  users       User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
