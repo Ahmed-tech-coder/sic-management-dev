@@ -72,8 +72,7 @@ export const Evaluations: React.FC = () => {
   const [taskFilter, setTaskFilter] = useState("");
   const [page, setPage] = useState(1);
   // Temporary: fetch a large page so the UI shows the full evaluations list.
-  const EVALUATIONS_PER_PAGE = 50;
-
+  const [limit] = useState(1000);
 
   // Modal forms
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -142,7 +141,6 @@ export const Evaluations: React.FC = () => {
       {
         trackFilter: isHead ? user?.track_id : trackFilter,
         search,
-        evaluatorSearch,
         task: taskFilter,
         page,
       },
@@ -153,10 +151,9 @@ export const Evaluations: React.FC = () => {
           params: {
             track_id: isHead ? user?.track_id : trackFilter || undefined,
             search: search || undefined,
-            evaluator: evaluatorSearch || undefined,
             task: taskFilter || undefined,
             page,
-            limit: EVALUATIONS_PER_PAGE,
+            limit,
           },
         })
         .then((res) => res.data),
@@ -385,7 +382,7 @@ export const Evaluations: React.FC = () => {
         if (
           cols.length <
           Math.max(assessmentIdx, studentIdx, totalGradeIdx, studentGradeIdx) +
-          1
+            1
         )
           continue;
 
@@ -579,10 +576,10 @@ export const Evaluations: React.FC = () => {
           action={
             canMutate
               ? {
-                label: "New Evaluation",
-                icon: Plus,
-                onClick: handleOpenCreate,
-              }
+                  label: "New Evaluation",
+                  icon: Plus,
+                  onClick: handleOpenCreate,
+                }
               : undefined
           }
         />
@@ -752,32 +749,31 @@ export const Evaluations: React.FC = () => {
                 actions={
                   canMutate
                     ? [
-                      {
-                        label: "Edit",
-                        icon: Edit,
-                        onClick: () => handleOpenEdit(ev),
-                      },
-                      {
-                        label: "Delete",
-                        icon: Trash2,
-                        onClick: () => handleDelete(ev.id),
-                        variant: "danger",
-                      },
-                    ]
+                        {
+                          label: "Edit",
+                          icon: Edit,
+                          onClick: () => handleOpenEdit(ev),
+                        },
+                        {
+                          label: "Delete",
+                          icon: Trash2,
+                          onClick: () => handleDelete(ev.id),
+                          variant: "danger",
+                        },
+                      ]
                     : []
                 }
               />
             ))}
           </div>
 
-          {/* //////////// Pagination controls ///////////// */}
-          {total > EVALUATIONS_PER_PAGE && (
+          {/* Pagination controls */}
+          {total > limit && (
             <div className="flex items-center justify-between p-4 bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card text-xs text-neutral-455 dark:text-neutral-400">
               <p>
-                Showing {(page - 1) * EVALUATIONS_PER_PAGE + 1} to{" "}
-                {Math.min(page * EVALUATIONS_PER_PAGE, total)} of {total} records
+                Showing {(page - 1) * limit + 1} to{" "}
+                {Math.min(page * limit, total)} of {total} records
               </p>
-
               <div className="flex items-center gap-2">
                 <button
                   disabled={page === 1}
@@ -786,9 +782,8 @@ export const Evaluations: React.FC = () => {
                 >
                   Previous
                 </button>
-
                 <button
-                  disabled={page * EVALUATIONS_PER_PAGE >= total}
+                  disabled={page * limit >= total}
                   onClick={() => setPage(page + 1)}
                   className="px-3 py-1.5 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 disabled:opacity-50 rounded font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-750 cursor-pointer"
                 >
@@ -797,381 +792,384 @@ export const Evaluations: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Create / Edit Modal */}
-          {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden">
-                <h3 className="text-lg font-bold">
-                  {editingEval ? "Edit Evaluation" : "Log Task Evaluation"}
-                </h3>
-                <p className="text-xs text-neutral-400 mt-1 mb-5">
-                  Grade technical members for completed curriculum tasks and project
-                  submissions.
-                </p>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
-                      Select Member
-                    </label>
-                    {editingEval ? (
-                      <input
-                        type="text"
-                        value={editingEval.technical_members?.name || "Unknown"}
-                        className="w-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm text-neutral-500 cursor-not-allowed"
-                        readOnly
-                      />
-                    ) : (
-                      <select
-                        value={formData.technical_member_id}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            technical_member_id: e.target.value,
-                          })
-                        }
-                        className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
-                        required
-                      >
-                        <option value="" disabled>
-                          Choose a member...
-                        </option>
-                        {members.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
-                      Task Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.task_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, task_name: e.target.value })
-                      }
-                      placeholder="e.g. Session 1: OOP Task"
-                      className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
-                        Task Total Score
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={formData.max_score}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            max_score: parseInt(e.target.value, 10) || 1,
-                          })
-                        }
-                        placeholder="e.g. 100, 30, 50"
-                        className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
-                        Student Score (0 - {formData.max_score})
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={formData.max_score}
-                        value={formData.score}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            score: parseInt(e.target.value, 10) || 0,
-                          })
-                        }
-                        className={`w-full bg-neutral-50 dark:bg-[#161F30] border rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand ${formData.score > formData.max_score
-                            ? "border-rose-500 focus:border-rose-500"
-                            : "border-neutral-200 dark:border-neutral-800"
-                          }`}
-                        required
-                      />
-                      {formData.score > formData.max_score && (
-                        <p className="text-[10px] text-rose-500 font-semibold mt-1">
-                          Score cannot exceed {formData.max_score}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
-                      Evaluator Feedback (Optional)
-                    </label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
-                      placeholder="Write comments, strengths, or items to improve..."
-                      rows={4}
-                      className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand resize-none"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-350 transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors cursor-pointer"
-                    >
-                      {submitting
-                        ? "Submitting..."
-                        : editingEval
-                          ? "Save Changes"
-                          : "Log Evaluation"}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* View Notes Dialog */}
-          {viewingNotesEval && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-                {/* Close Button Top Right */}
-                <button
-                  onClick={() => setViewingNotesEval(null)}
-                  className="absolute right-4 top-4 p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors cursor-pointer"
-                >
-                  <X className="w-4.5 h-4.5" />
-                </button>
-
-                {/* Header */}
-                <div className="flex items-center gap-3 pb-4 border-b border-neutral-150 dark:border-neutral-850">
-                  <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                      Evaluation Feedback
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Detailed evaluation notes and task information
-                    </p>
-                  </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="flex-1 overflow-y-auto py-5 space-y-4 pr-1">
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-2 gap-4 bg-neutral-50 dark:bg-[#161F30] p-4 rounded-btn border border-neutral-200 dark:border-neutral-800 text-xs">
-                    <div>
-                      <span className="block text-neutral-400 font-medium mb-0.5">
-                        Student Member
-                      </span>
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                        {viewingNotesEval.technical_members?.name || "Unknown"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-neutral-400 font-medium mb-0.5">
-                        Track
-                      </span>
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                        {(viewingNotesEval.technical_members as any)?.tracks
-                          ?.name || "Unknown"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-neutral-400 font-medium mb-0.5">
-                        Task Name
-                      </span>
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                        {viewingNotesEval.task_name}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-neutral-400 font-medium mb-0.5">
-                        Evaluation Score
-                      </span>
-                      <span
-                        className={`inline-block font-extrabold px-2 py-0.5 rounded-full text-[10px] mt-0.5 ${getScoreBadgeStyles(viewingNotesEval.score, viewingNotesEval.max_score)}`}
-                      >
-                        {viewingNotesEval.score}/{viewingNotesEval.max_score ?? 100}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="block text-neutral-400 font-medium mb-0.5">
-                        Evaluator
-                      </span>
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                        {viewingNotesEval.evaluator?.name || "System"}{" "}
-                        <span className="font-normal text-neutral-400 capitalize">
-                          ({viewingNotesEval.evaluator?.role || "Admin"})
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Feedback Block */}
-                  <div className="space-y-2">
-                    <span className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                      Notes & Comments
-                    </span>
-                    <div className="bg-neutral-50 dark:bg-[#161F30] border-l-4 border-brand rounded-r-card p-4 text-sm text-neutral-800 dark:text-neutral-200 font-medium leading-relaxed whitespace-pre-wrap break-words">
-                      {viewingNotesEval.notes ||
-                        "No comments written for this evaluation."}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Actions */}
-                <div className="pt-4 border-t border-neutral-150 dark:border-neutral-850 flex justify-end">
-                  <button
-                    onClick={() => setViewingNotesEval(null)}
-                    className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold rounded-btn transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Import Results Dialog */}
-          {importResults && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-                {/* Close Button */}
-                <button
-                  onClick={() => setImportResults(null)}
-                  className="absolute right-4 top-4 p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors cursor-pointer"
-                >
-                  <X className="w-4.5 h-4.5" />
-                </button>
-
-                {/* Header */}
-                <div className="flex items-center gap-3 pb-4 border-b border-neutral-150 dark:border-neutral-850">
-                  <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                      Import Results
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      {importResults.message}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="grid grid-cols-3 gap-3 py-4">
-                  <div className="text-center p-3 bg-neutral-50 dark:bg-[#161F30] rounded-btn border border-neutral-200 dark:border-neutral-800">
-                    <p className="text-2xl font-extrabold text-neutral-900 dark:text-neutral-100">
-                      {importResults.totalRows}
-                    </p>
-                    <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                      Total Rows
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-emerald-500/5 rounded-btn border border-emerald-500/20">
-                    <p className="text-2xl font-extrabold text-emerald-500">
-                      {importResults.successCount}
-                    </p>
-                    <p className="text-[10px] font-semibold text-emerald-500/70 uppercase tracking-wider">
-                      Imported
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-rose-500/5 rounded-btn border border-rose-500/20">
-                    <p className="text-2xl font-extrabold text-rose-500">
-                      {importResults.errorCount}
-                    </p>
-                    <p className="text-[10px] font-semibold text-rose-500/70 uppercase tracking-wider">
-                      Failed
-                    </p>
-                  </div>
-                </div>
-
-                {/* Per-row Results */}
-                {importResults.results.length > 0 && (
-                  <div className="flex-1 overflow-y-auto max-h-[300px] border border-neutral-200 dark:border-neutral-800 rounded-btn">
-                    <table className="w-full text-xs">
-                      <thead className="sticky top-0 bg-neutral-50 dark:bg-[#161F30] border-b border-neutral-200 dark:border-neutral-800">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-bold text-neutral-400 uppercase tracking-wider">
-                            Row
-                          </th>
-                          <th className="px-3 py-2 text-left font-bold text-neutral-400 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-bold text-neutral-400 uppercase tracking-wider">
-                            Details
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                        {importResults.results.map((r) => (
-                          <tr
-                            key={r.row}
-                            className="hover:bg-neutral-50/50 dark:hover:bg-[#182235]/40"
-                          >
-                            <td className="px-3 py-2 font-semibold text-neutral-600 dark:text-neutral-300">
-                              #{r.row}
-                            </td>
-                            <td className="px-3 py-2">
-                              {r.status === "success" ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                  Success
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-rose-500 font-bold">
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                  Failed
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-neutral-500 dark:text-neutral-400">
-                              {r.error || "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div className="pt-4 border-t border-neutral-150 dark:border-neutral-850 flex justify-end mt-4">
-                  <button
-                    onClick={() => setImportResults(null)}
-                    className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold rounded-btn transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      );
+      )}
+
+      {/* Create / Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden">
+            <h3 className="text-lg font-bold">
+              {editingEval ? "Edit Evaluation" : "Log Task Evaluation"}
+            </h3>
+            <p className="text-xs text-neutral-400 mt-1 mb-5">
+              Grade technical members for completed curriculum tasks and project
+              submissions.
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                  Select Member
+                </label>
+                {editingEval ? (
+                  <input
+                    type="text"
+                    value={editingEval.technical_members?.name || "Unknown"}
+                    className="w-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm text-neutral-500 cursor-not-allowed"
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    value={formData.technical_member_id}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        technical_member_id: e.target.value,
+                      })
+                    }
+                    className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
+                    required
+                  >
+                    <option value="" disabled>
+                      Choose a member...
+                    </option>
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                  Task Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.task_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, task_name: e.target.value })
+                  }
+                  placeholder="e.g. Session 1: OOP Task"
+                  className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                    Task Total Score
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.max_score}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        max_score: parseInt(e.target.value, 10) || 1,
+                      })
+                    }
+                    placeholder="e.g. 100, 30, 50"
+                    className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                    Student Score (0 - {formData.max_score})
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={formData.max_score}
+                    value={formData.score}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        score: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                    className={`w-full bg-neutral-50 dark:bg-[#161F30] border rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand ${
+                      formData.score > formData.max_score
+                        ? "border-rose-500 focus:border-rose-500"
+                        : "border-neutral-200 dark:border-neutral-800"
+                    }`}
+                    required
+                  />
+                  {formData.score > formData.max_score && (
+                    <p className="text-[10px] text-rose-500 font-semibold mt-1">
+                      Score cannot exceed {formData.max_score}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                  Evaluator Feedback (Optional)
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  placeholder="Write comments, strengths, or items to improve..."
+                  rows={4}
+                  className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-350 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors cursor-pointer"
+                >
+                  {submitting
+                    ? "Submitting..."
+                    : editingEval
+                      ? "Save Changes"
+                      : "Log Evaluation"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Notes Dialog */}
+      {viewingNotesEval && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button Top Right */}
+            <button
+              onClick={() => setViewingNotesEval(null)}
+              className="absolute right-4 top-4 p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 pb-4 border-b border-neutral-150 dark:border-neutral-850">
+              <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                  Evaluation Feedback
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Detailed evaluation notes and task information
+                </p>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto py-5 space-y-4 pr-1">
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 gap-4 bg-neutral-50 dark:bg-[#161F30] p-4 rounded-btn border border-neutral-200 dark:border-neutral-800 text-xs">
+                <div>
+                  <span className="block text-neutral-400 font-medium mb-0.5">
+                    Student Member
+                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                    {viewingNotesEval.technical_members?.name || "Unknown"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-neutral-400 font-medium mb-0.5">
+                    Track
+                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                    {(viewingNotesEval.technical_members as any)?.tracks
+                      ?.name || "Unknown"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-neutral-400 font-medium mb-0.5">
+                    Task Name
+                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                    {viewingNotesEval.task_name}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-neutral-400 font-medium mb-0.5">
+                    Evaluation Score
+                  </span>
+                  <span
+                    className={`inline-block font-extrabold px-2 py-0.5 rounded-full text-[10px] mt-0.5 ${getScoreBadgeStyles(viewingNotesEval.score, viewingNotesEval.max_score)}`}
+                  >
+                    {viewingNotesEval.score}/{viewingNotesEval.max_score ?? 100}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <span className="block text-neutral-400 font-medium mb-0.5">
+                    Evaluator
+                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                    {viewingNotesEval.evaluator?.name || "System"}{" "}
+                    <span className="font-normal text-neutral-400 capitalize">
+                      ({viewingNotesEval.evaluator?.role || "Admin"})
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Feedback Block */}
+              <div className="space-y-2">
+                <span className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  Notes & Comments
+                </span>
+                <div className="bg-neutral-50 dark:bg-[#161F30] border-l-4 border-brand rounded-r-card p-4 text-sm text-neutral-800 dark:text-neutral-200 font-medium leading-relaxed whitespace-pre-wrap break-words">
+                  {viewingNotesEval.notes ||
+                    "No comments written for this evaluation."}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="pt-4 border-t border-neutral-150 dark:border-neutral-850 flex justify-end">
+              <button
+                onClick={() => setViewingNotesEval(null)}
+                className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold rounded-btn transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Results Dialog */}
+      {importResults && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => setImportResults(null)}
+              className="absolute right-4 top-4 p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 pb-4 border-b border-neutral-150 dark:border-neutral-850">
+              <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center">
+                <Upload className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                  Import Results
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {importResults.message}
+                </p>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-3 py-4">
+              <div className="text-center p-3 bg-neutral-50 dark:bg-[#161F30] rounded-btn border border-neutral-200 dark:border-neutral-800">
+                <p className="text-2xl font-extrabold text-neutral-900 dark:text-neutral-100">
+                  {importResults.totalRows}
+                </p>
+                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                  Total Rows
+                </p>
+              </div>
+              <div className="text-center p-3 bg-emerald-500/5 rounded-btn border border-emerald-500/20">
+                <p className="text-2xl font-extrabold text-emerald-500">
+                  {importResults.successCount}
+                </p>
+                <p className="text-[10px] font-semibold text-emerald-500/70 uppercase tracking-wider">
+                  Imported
+                </p>
+              </div>
+              <div className="text-center p-3 bg-rose-500/5 rounded-btn border border-rose-500/20">
+                <p className="text-2xl font-extrabold text-rose-500">
+                  {importResults.errorCount}
+                </p>
+                <p className="text-[10px] font-semibold text-rose-500/70 uppercase tracking-wider">
+                  Failed
+                </p>
+              </div>
+            </div>
+
+            {/* Per-row Results */}
+            {importResults.results.length > 0 && (
+              <div className="flex-1 overflow-y-auto max-h-[300px] border border-neutral-200 dark:border-neutral-800 rounded-btn">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-neutral-50 dark:bg-[#161F30] border-b border-neutral-200 dark:border-neutral-800">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-bold text-neutral-400 uppercase tracking-wider">
+                        Row
+                      </th>
+                      <th className="px-3 py-2 text-left font-bold text-neutral-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-3 py-2 text-left font-bold text-neutral-400 uppercase tracking-wider">
+                        Details
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                    {importResults.results.map((r) => (
+                      <tr
+                        key={r.row}
+                        className="hover:bg-neutral-50/50 dark:hover:bg-[#182235]/40"
+                      >
+                        <td className="px-3 py-2 font-semibold text-neutral-600 dark:text-neutral-300">
+                          #{r.row}
+                        </td>
+                        <td className="px-3 py-2">
+                          {r.status === "success" ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Success
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-rose-500 font-bold">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              Failed
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-neutral-500 dark:text-neutral-400">
+                          {r.error || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-neutral-150 dark:border-neutral-850 flex justify-end mt-4">
+              <button
+                onClick={() => setImportResults(null)}
+                className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold rounded-btn transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
-      export default Evaluations;
+export default Evaluations;
