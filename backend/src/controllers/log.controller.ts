@@ -52,7 +52,7 @@ export const deleteActivityLog = async (req: AuthenticatedRequest, res: Response
       },
     });
 
-    return res.status(200).json({ message: 'Activity log deleted successfully' });
+    return res.status(200).json({ message: 'Activity log has been deleted successfully' });
   } catch (err) {
     console.error('Delete log error:', err);
     return res.status(500).json({ error: 'Internal Server Error' });
@@ -63,7 +63,7 @@ export const clearActivityLogs = async (req: AuthenticatedRequest, res: Response
   try {
     await prisma.activityLog.deleteMany();
 
-    return res.status(200).json({ message: 'All activity logs cleared successfully' });
+    return res.status(200).json({ message: 'All activity logs have been cleared successfully' });
   } catch (err) {
     console.error('Clear logs error:', err);
     return res.status(500).json({ error: 'Internal Server Error' });
