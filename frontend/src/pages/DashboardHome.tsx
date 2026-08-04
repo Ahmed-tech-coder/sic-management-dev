@@ -88,7 +88,7 @@ export const DashboardHome: React.FC = () => {
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black dark:text-white tracking-tight leading-none">
             Welcome back,{" "}
-            <span className="dark:text-transparent bg-gradient-to-r from-brand via-brand-light to-white bg-clip-text font-black">
+            <span className="text-brand dark:text-transparent dark:bg-gradient-to-r dark:from-brand dark:via-brand-light dark:to-white dark:bg-clip-text">
               {user?.name}
             </span>
           </h2>
@@ -236,7 +236,12 @@ export const DashboardHome: React.FC = () => {
                           {log.users?.role || "Leader"})
                         </span>
                         <span>•</span>
-                        <span>{new Date(log.created_at).toLocaleString()}</span>
+                        <span>
+                          {new Date(log.created_at).toLocaleString("en-GB", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </span>
                       </div>
                     </div>
                   </div>
