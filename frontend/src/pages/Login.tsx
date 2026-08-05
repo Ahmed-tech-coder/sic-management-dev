@@ -181,7 +181,7 @@ ${role.colorClass}`}>
 
         <footer className="mt-20 text-center">
           <p className="text-neutral-600 text-xs font-medium tracking-widest uppercase">
-            Developed by <span className="text-neutral-400">Ahmed Magdy</span> &copy; 2026
+            Developed by <span className="text-neutral-400">DevWay</span> &copy; 2026
           </p>
         </footer>
       </main>
