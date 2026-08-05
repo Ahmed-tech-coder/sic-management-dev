@@ -205,58 +205,144 @@ export const ViceHeads: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Vice Heads Management</h2>
-          <p className="text-neutral-400 text-sm mt-1">
-            {isLeader ? 'Create, manage, and assign tracks to Vice Heads.' : 'View Vice Heads and their assigned tracks.'}
-          </p>
-        </div>
-        
-        {isLeader && (
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Vice Head</span>
-          </button>
-        )}
-      </div>
+      
+<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+  <div className="flex items-center gap-4">
+
+    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-blue-500 text-white flex items-center justify-center shadow-lg">
+      <Users className="w-8 h-8" />
+    </div>
+
+    <div>
+      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+        Vice Heads
+      </h1>
+
+      <p className="text-sm text-neutral-500 mt-1">
+        Manage vice heads, assigned tracks and account status.
+      </p>
+    </div>
+
+  </div>
+
+  {isLeader && (
+    <button
+      onClick={handleOpenCreate}
+      className="
+      flex items-center gap-2
+      px-5 py-3
+      rounded-xl
+      bg-gradient-to-r
+      from-brand
+      to-blue-600
+      text-white
+      font-semibold
+      shadow-lg
+      hover:shadow-xl
+      hover:scale-105
+      transition-all
+      cursor-pointer
+      "
+    >
+      <Plus className="w-5 h-5" />
+      Add Vice Head
+    </button>
+  )}
+
+</div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white dark:bg-[#111827] p-4 rounded-card border border-neutral-200 dark:border-neutral-800 shadow-sm">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-          <input
-            type="text"
-            placeholder="Search name, phone, email..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-brand"
-          />
-        </div>
+      <div
+className="
+bg-white
+dark:bg-[#111827]
+rounded-2xl
+border
+border-neutral-200
+dark:border-neutral-800
+shadow-lg
+p-6
+flex
+flex-col
+lg:flex-row
+lg:items-center
+lg:justify-between
+gap-5
+"
+>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <span className="text-xs text-neutral-450 dark:text-neutral-500 font-medium shrink-0">Track:</span>
-          <select
-            value={trackFilter}
-            onChange={(e) => {
-              setTrackFilter(e.target.value);
-              setPage(1);
-            }}
-            className="w-full sm:w-44 bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2 px-3 text-xs focus:outline-none focus:border-brand"
-          >
-            <option value="">All Tracks</option>
-            {tracks.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+  <div className="relative flex-1 max-w-md">
+
+    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+
+    <input
+        type="text"
+        placeholder="Search by name, phone or email..."
+        value={search}
+        onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+        }}
+        className="
+        w-full
+        pl-11
+        pr-4
+        py-3
+        rounded-xl
+        bg-neutral-50
+        dark:bg-[#161F30]
+        border
+        border-neutral-200
+        dark:border-neutral-700
+        focus:border-brand
+        focus:ring-4
+        focus:ring-brand/10
+        transition
+        outline-none
+        "
+    />
+
+</div>
+
+<select
+    value={trackFilter}
+    onChange={(e) => {
+        setTrackFilter(e.target.value);
+        setPage(1);
+    }}
+    className="
+    w-full
+    lg:w-56
+    px-4
+    py-3
+    rounded-xl
+    bg-neutral-50
+    dark:bg-[#161F30]
+    border
+    border-neutral-200
+    dark:border-neutral-700
+    focus:border-brand
+    focus:ring-4
+    focus:ring-brand/10
+    transition
+    outline-none
+    "
+>
+
+    <option value="">All Tracks</option>
+
+    {tracks.map(track => (
+        <option
+            key={track.id}
+            value={track.id}
+        >
+            {track.name}
+        </option>
+    ))}
+
+</select>
+  </div>
 
       {/* Loader, Empty and Table-to-Card Grid */}
       {loading ? (
@@ -271,11 +357,11 @@ export const ViceHeads: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card overflow-hidden shadow-sm">
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111827] shadow-lg">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#161F30] text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  <tr className="bg-gradient-to-r from-brand/5 to-blue-500/5 border-b border-neutral-200 dark:border-neutral-800 text-[11px] font-semibold uppercase tracking-widest text-neutral-500">
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Track</th>
                     <th className="px-6 py-4">Contact Info</th>
@@ -285,10 +371,17 @@ export const ViceHeads: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
                   {viceHeads.map((viceHead) => (
-                    <tr key={viceHead.id} className="hover:bg-neutral-50/50 dark:hover:bg-[#182235]/40 transition-colors">
+                   <tr
+  key={viceHead.id}
+ className="
+transition-all
+duration-200
+hover:shadow-sm
+dark:hover:bg-brand/10
+">
                       <td className="px-6 py-4.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold">
+                         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand to-blue-500 text-white flex items-center justify-center font-bold shadow-md">
                             {viceHead.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
