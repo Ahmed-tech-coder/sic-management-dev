@@ -43,7 +43,7 @@ export const Login: React.FC = () => {
       icon: Shield,
       desc: "System oversight, audit logs, and global permissions control.",
       theme: "indigo",
-      colorClass: "hover:border-indigo-500/50 group-hover:text-indigo-400",
+      colorClass: "hover:border-indigo-500/50 group-hover:text-indigo-400 hover:shadow-indigo-500/20",
     },
     {
       id: "head" as const,
@@ -51,7 +51,7 @@ export const Login: React.FC = () => {
       icon: UserCheck,
       desc: "Manage academic tracks, evaluate members, and finalize grades.",
       theme: "emerald",
-      colorClass: "hover:border-emerald-500/50 group-hover:text-emerald-400",
+      colorClass: "hover:border-emerald-500/50 group-hover:text-emerald-400 hover:shadow-emerald-500/20",
     },
     {
       id: "hr" as const,
@@ -59,7 +59,7 @@ export const Login: React.FC = () => {
       icon: Users,
       desc: "Monitor attendance, track progress, and export compliance reports.",
       theme: "violet",
-      colorClass: "hover:border-violet-500/50 group-hover:text-violet-400",
+      colorClass: "hover:border-violet-500/50 group-hover:text-violet-400 hover:shadow-violet-500/20",
     },
   ];
 
@@ -92,7 +92,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#050505] text-slate-200 selection:bg-brand/30 overflow-hidden relative font-sans">
+   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#050505] via-[#0B0B12] to-[#14142B] text-slate-200 selection:bg-brand/30 overflow-hidden relative font-sans"> 
       {/* High-End Background Effect */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-brand/10 blur-[120px] animate-pulse" />
@@ -122,6 +122,14 @@ export const Login: React.FC = () => {
           >
             SIC <span className="text-neutral-500">Management</span>
           </motion.h1>
+<motion.p
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.2 }}
+  className="mt-4 max-w-2xl mx-auto text-center text-neutral-400 text-lg leading-relaxed"
+>
+  Secure platform for managing members, evaluations, and leadership operations.
+</motion.p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -132,28 +140,52 @@ export const Login: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               onClick={() => handleSelectRole(role.id)}
-              className={`group relative flex flex-col text-left p-8 rounded-[2rem] bg-neutral-900/40 border border-white/[0.05] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 ${role.colorClass}`}
-            >
+            className={`group relative flex flex-col text-left p-8 rounded-[2rem] 
+bg-gradient-to-br from-white/[0.08] to-white/[0.02]
+border border-white/10 
+backdrop-blur-xl
+transition-all duration-500
+hover:-translate-y-4
+hover:scale-[1.04]
+hover:shadow-2xl
+cursor-pointer
+${role.colorClass}`}>
+  <span className="absolute top-6 right-8 text-5xl font-black text-white/5">
+  0{i + 1}
+</span>
               <div className="mb-8 p-4 w-fit rounded-2xl bg-white/5 group-hover:scale-110 transition-transform duration-500">
-                <role.icon className="w-8 h-8 text-neutral-400 group-hover:text-inherit" />
-              </div>
+  <role.icon 
+    className={`w-10 h-10 ${
+      role.id === "leader"
+        ? "text-indigo-400"
+        : role.id === "head"
+        ? "text-emerald-400"
+        : "text-violet-400"
+    }`}
+  />
+</div>
               <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
                 {role.title}
                 <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
               </h3>
-              <p className="text-neutral-500 text-sm leading-relaxed mb-8">
-                {role.desc}
-              </p>
-              <div className="mt-auto text-[10px] font-black uppercase tracking-widest text-neutral-600 group-hover:text-neutral-400 transition-colors">
-                Enter Portal
-              </div>
+              <p className="text-neutral-400 text-sm leading-relaxed mb-8 group-hover:text-neutral-300 transition-colors">
+  {role.desc}
+</p>
+              <div className="mt-auto flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-500 group-hover:text-white transition-all">
+  Enter Portal
+  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+</div>
             </motion.button>
           ))}
         </div>
 
         <footer className="mt-20 text-center">
           <p className="text-neutral-600 text-xs font-medium tracking-widest uppercase">
-            Developed by <span className="text-neutral-400">Ahmed Magdy</span> &copy; 2024
+<<<<<<< HEAD
+            Developed by <span className="text-neutral-400">Ahmed Magdy</span> &copy; 2026
+=======
+            Developed by <span className="text-neutral-400">DevWay</span> &copy; 2026
+>>>>>>> a758f3560da05f4b49523f0ab1b0b8b8db253505
           </p>
         </footer>
       </main>
@@ -174,15 +206,29 @@ export const Login: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-neutral-950 border border-white/10 rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-lg bg-neutral-950 border border-white/10 rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
             >
               {/* Dynamic Theme Glow */}
-              <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 blur-[40px] bg-${selectedRole === 'leader' ? 'indigo' : selectedRole === 'head' ? 'emerald' : 'violet'}-500`} />
+              <div
+  className={`absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 blur-[40px] ${
+    selectedRole === "leader"
+      ? "bg-indigo-500"
+      : selectedRole === "head"
+      ? "bg-emerald-500"
+      : "bg-violet-500"
+  }`}
+/>
 
               <div className="flex justify-between items-start mb-10">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Login</h2>
-                  <p className="text-neutral-500 text-sm">Accessing {selectedRole} portal</p>
+                  <p className="text-brand text-sm mt-2 font-semibold">
+  {roles.find((r) => r.id === selectedRole)?.title}
+</p>
+                  <p className="text-neutral-400 text-sm mt-2">
+  Sign in to continue to your dashboard.
+</p>
+                  
                 </div>
                 <button 
                   onClick={() => setIsModalOpen(false)}
@@ -201,8 +247,8 @@ export const Login: React.FC = () => {
                       type="text"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="Email or Phone"
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-neutral-700 focus:outline-none focus:border-brand/50 focus:ring-4 focus:ring-brand/5 transition-all"
+                      placeholder="Enter your email or phone"
+                      className="w-full bg-white/[0.05] border border-neutral-700 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all duration-300"
                       required
                     />
                   </div>
@@ -216,9 +262,8 @@ export const Login: React.FC = () => {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-white placeholder-neutral-700 focus:outline-none focus:border-brand/50 focus:ring-4 focus:ring-brand/5 transition-all"
-                      required
+                      placeholder="Enter your password"
+                      className="w-full bg-white/[0.05] border border-neutral-700 rounded-2xl py-4 pl-12 pr-12 text-white placeholder-neutral-500 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all duration-300"
                     />
                     <button
                       type="button"
@@ -233,11 +278,11 @@ export const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full relative group mt-4 overflow-hidden rounded-2xl bg-white p-[1px] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full relative group mt-4 overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 p-[1px] transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-violet-500/30 active:scale-[0.98]"
                 >
                   <div className="relative flex items-center justify-center gap-2 bg-neutral-950 rounded-[15px] px-8 py-4 transition-all group-hover:bg-transparent">
                     <span className="font-bold text-white group-hover:text-neutral-950 transition-colors">
-                      {loading ? "Verifying..." : "Authorize Access"}
+                      {loading ? "Verifying..." : "Sign In"}
                     </span>
                     {!loading && <ArrowRight className="w-4 h-4 text-white group-hover:text-neutral-950 transition-transform group-hover:translate-x-1" />}
                   </div>
