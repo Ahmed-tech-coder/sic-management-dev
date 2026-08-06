@@ -39,27 +39,36 @@ export const DashboardHome: React.FC = () => {
 
   const canViewLogs = useMemo(
     () => !!user && (user.role === "leader" || user.role === "hr"),
-    [user]
+    [user],
   );
 
-  const { data: metrics, isLoading: isMetricsLoading } = useQuery<DashboardStats>({
-    queryKey: ["dashboard-metrics"],
-    queryFn: () => api.get("/dashboard/metrics").then((res) => res.data),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
+  const { data: metrics, isLoading: isMetricsLoading } =
+    useQuery<DashboardStats>({
+      queryKey: ["dashboard-metrics"],
+      queryFn: () => api.get("/dashboard/metrics").then((res) => res.data),
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+    });
 
-  const { data: recentLogsData, isLoading: isLogsLoading } = useQuery<{ logs: ActivityLog[] }>({
+  const { data: recentLogsData, isLoading: isLogsLoading } = useQuery<{
+    logs: ActivityLog[];
+  }>({
     queryKey: ["dashboard-recent-logs"],
     queryFn: () =>
-      api.get("/activity-logs", { params: { limit: 5 } }).then((res) => res.data),
+      api
+        .get("/activity-logs", { params: { limit: 5 } })
+        .then((res) => res.data),
     enabled: canViewLogs,
     staleTime: 60 * 1000,
     gcTime: 3 * 60 * 1000,
   });
 
   const loading = isMetricsLoading || (canViewLogs ? isLogsLoading : false);
-  const stats = metrics || { tracksCount: 0, membersCount: 0, evaluationsCount: 0 };
+  const stats = metrics || {
+    tracksCount: 0,
+    membersCount: 0,
+    evaluationsCount: 0,
+  };
   const recentLogs = recentLogsData?.logs || [];
 
   const currentDateFormatted = useMemo(() => {
@@ -108,7 +117,8 @@ export const DashboardHome: React.FC = () => {
 
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
             Welcome back,{" "}
-            <span className="text-transparent bg-gradient-to-r from-brand via-brand-light to-white bg-clip-text font-black">
+            <span className="text-brand dark:text-transparent dark:bg-gradient-to-r dark:from-brand dark:via-brand-light dark:to-white dark:bg-clip-text">
+              {" "}
               {user?.name}
             </span>
           </h2>
@@ -270,7 +280,10 @@ export const DashboardHome: React.FC = () => {
               </div>
             ) : (
               recentLogs.map((log) => (
-                <div key={log.id} className="relative flex items-start gap-4 group">
+                <div
+                  key={log.id}
+                  className="relative flex items-start gap-4 group"
+                >
                   {/* Timeline Dot */}
                   <div className="absolute -left-6 top-1.5 w-5 h-5 rounded-full bg-white dark:bg-[#0B0F19] border-2 border-brand flex items-center justify-center group-hover:scale-125 transition-transform z-10">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand" />
@@ -281,8 +294,12 @@ export const DashboardHome: React.FC = () => {
                       <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                         {log.action}
                       </p>
+
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
-                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(log.created_at).toLocaleString("en-GB", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -290,10 +307,15 @@ export const DashboardHome: React.FC = () => {
                     </p>
                     <div className="mt-2.5 flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
                       <span className="px-2 py-0.5 rounded bg-slate-200/60 dark:bg-white/5 border border-slate-300/40 dark:border-white/10">
-                        {log.users?.name || "System"} ({log.users?.role || "Leader"})
+                        {log.users?.name || "System"} (
+                        {log.users?.role || "Leader"})
                       </span>
+
                       <span>•</span>
-                      <span>{new Date(log.created_at).toLocaleDateString()}</span>
+
+                      <span>
+                        {new Date(log.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 </div>
