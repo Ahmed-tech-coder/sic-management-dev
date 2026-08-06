@@ -106,7 +106,7 @@ export const createMember = async (req: AuthenticatedRequest, res: Response) => 
       });
     } catch (dbErr: any) {
       if (dbErr.code === 'P2002') {
-        return res.status(400).json({ error: 'A technical member with this email or phone number already exists' });
+        return res.status(400).json({ error: 'There is technical member with this email or phone number already exists' });
       }
       throw dbErr;
     }
