@@ -499,11 +499,11 @@ export const ViceHeads: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card overflow-hidden shadow-sm">
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111827] shadow-lg">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#161F30] text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  <tr className="bg-gradient-to-r from-brand/5 to-blue-500/5 border-b border-neutral-200 dark:border-neutral-800 text-[11px] font-semibold uppercase tracking-widest text-neutral-500">
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Track</th>
                     <th className="px-6 py-4">Contact Info</th>
@@ -513,7 +513,14 @@ export const ViceHeads: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
                   {viceHeads.map((viceHead) => (
-                    <tr key={viceHead.id} className="hover:bg-neutral-50/50 dark:hover:bg-[#182235]/40 transition-colors">
+                   <tr
+  key={viceHead.id}
+ className="
+transition-all
+duration-200
+hover:shadow-sm
+dark:hover:bg-brand/10
+">
                       <td className="px-6 py-4.5">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-xs">
