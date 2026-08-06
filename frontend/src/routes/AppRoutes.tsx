@@ -10,6 +10,7 @@ import { ViceHeads } from '../pages/ViceHeads';
 import { Members } from '../pages/Members';
 import { Evaluations } from '../pages/Evaluations';
 import { ActivityLogs } from '../pages/ActivityLogs';
+import Events from '../pages/Events';
 
 // Protected Routes
 const ProtectedRoute: React.FC<{ allowedRoles?: string[] }> = ({ allowedRoles }) => {
@@ -78,8 +79,8 @@ export const AppRoutes: React.FC = () => {
 
           {/* Shared Content Pages (Leader, HR, Head) */}
           <Route path="/members" element={<Members />} />
-          <Route path="/evaluations" element={<Evaluations />} />
-          
+<Route path="/evaluations" element={<Evaluations />} />
+<Route path="/events" element={<Events />} />
         </Route>
       </Route>
 

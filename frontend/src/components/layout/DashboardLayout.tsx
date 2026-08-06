@@ -16,6 +16,7 @@ import {
   Moon,
   History,
   ChevronRight,
+  CalendarDays,
 } from "lucide-react";
 
 interface NavItem {
@@ -47,6 +48,7 @@ export const DashboardLayout: React.FC = () => {
     const operationalRoutes = [
       { name: "Technical Members", path: "/members", icon: GraduationCap },
       { name: "Evaluations", path: "/evaluations", icon: ClipboardList },
+       { name: "Events", path: "/events", icon: CalendarDays },
     ];
 
     switch (user.role) {
