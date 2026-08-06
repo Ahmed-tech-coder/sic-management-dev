@@ -1,13 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { 
+  Users, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  ToggleLeft, 
+  ToggleRight, 
+  Search, 
+  Key, 
+  Phone, 
+  Mail, 
+  Eye, 
+  EyeOff, 
+  Download, 
+  X, 
+  FilterX, 
+  UserCheck, 
+  Layers, 
+  Copy 
+} from 'lucide-react';
+
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import api from '../services/api';
-import { toast } from 'sonner';
-import { Users, Plus, Edit, Trash2, ToggleLeft, ToggleRight, Search, Key, Phone, Mail, Eye, EyeOff } from 'lucide-react';
 import { MobileEntityCard } from '../components/common/MobileEntityCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 
+// ==========================================
+// TYPES & CONSTANTS
+// ==========================================
 interface Track {
   id: string;
   name: string;
@@ -28,32 +52,126 @@ interface ViceHeadUser {
   };
 }
 
+interface ViceHeadPayload {
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+  head_type: string;
+  track_id: string;
+  is_active?: boolean;
+  password?: string;
+}
+
+const VICE_HEAD_MESSAGES = {
+  CREATE_SUCCESS: 'Vice Head created successfully',
+  UPDATE_SUCCESS: 'Vice Head updated successfully',
+  DELETE_SUCCESS: 'Vice Head deleted successfully',
+  REQUIRED_FIELDS: 'Please fill in all required fields',
+  OPERATION_FAILED: 'Operation failed',
+  DELETE_FAILED: 'Failed to delete Vice Head',
+  COPIED: 'Copied to clipboard!',
+} as const;
+
+// ==========================================
+// SERVICES & HELPERS
+// ==========================================
+const viceHeadsService = {
+  getTracks: async (): Promise<{ tracks: Track[] }> => {
+    const res = await api.get('/tracks');
+    return res.data;
+  },
+
+  getViceHeads: async (params: {
+    track_id?: string;
+    search?: string;
+    page: number;
+    limit: number;
+  }): Promise<{ users: ViceHeadUser[]; total: number }> => {
+    const res = await api.get('/users', {
+      params: {
+        role: 'head',
+        head_type: 'vice_head',
+        ...params,
+      },
+    });
+    return res.data;
+  },
+
+  createViceHead: async (payload: ViceHeadPayload) => {
+    const res = await api.post('/users', payload);
+    return res.data;
+  },
+
+  updateViceHead: async (id: string, payload: ViceHeadPayload) => {
+    const res = await api.put(`/users/${id}`, payload);
+    return res.data;
+  },
+
+  deleteViceHead: async (id: string) => {
+    const res = await api.delete(`/users/${id}`);
+    return res.data;
+  },
+};
+
 const formatToE164 = (input: string): string => {
   const cleaned = input.trim();
-  if (cleaned.startsWith('+')) {
-    return cleaned;
-  }
-  if (cleaned.startsWith('0')) {
-    return `+20${cleaned.substring(1)}`;
-  }
+  if (cleaned.startsWith('+')) return cleaned;
+  if (cleaned.startsWith('0')) return `+20${cleaned.substring(1)}`;
   return `+20${cleaned}`;
 };
 
+const getInitials = (name: string): string => {
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+  }
+  return name.charAt(0).toUpperCase();
+};
+
+const exportViceHeadsToCSV = (users: ViceHeadUser[]) => {
+  if (!users.length) return;
+  const headers = ['ID', 'Name', 'Phone', 'Email', 'Track', 'Status'];
+  const rows = users.map((u) => [
+    u.id,
+    `"${u.name}"`,
+    `"${u.phone}"`,
+    `"${u.email}"`,
+    `"${u.tracks?.name || 'Unassigned'}"`,
+    `"${u.is_active ? 'Active' : 'Inactive'}"`,
+  ]);
+
+  const csvContent =
+    'data:text/csv;charset=utf-8,' +
+    [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `vice_heads_export_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 export const ViceHeads: React.FC = () => {
   const { user: currentUser } = useAuth();
   const confirm = useConfirm();
-  const isLeader = currentUser?.role === 'leader';
+  const queryClient = useQueryClient();
 
-  const [viceHeads, setViceHeads] = useState<ViceHeadUser[]>([]);
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Filtering & Pagination
+  const isLeader = useMemo(() => currentUser?.role === 'leader', [currentUser?.role]);
+
+  // Filters & State
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [trackFilter, setTrackFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [limit] = useState(10);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Modal forms
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,47 +187,77 @@ export const ViceHeads: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchViceHeads = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/users', {
-        params: {
-          role: 'head',
-          head_type: 'vice_head',
-          track_id: trackFilter || undefined,
-          search: search || undefined,
-          page,
-          limit,
-        },
+  // Debounce Search Effect
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Query: Fetch Tracks
+  const { data: tracksData } = useQuery({
+    queryKey: ['tracks'],
+    queryFn: viceHeadsService.getTracks,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  const tracks = useMemo(() => tracksData?.tracks || [], [tracksData]);
+
+  // Query: Fetch Vice Heads
+  const { data: viceHeadsData, isLoading: loading } = useQuery({
+    queryKey: ['vice-heads', { trackFilter, search: debouncedSearch, page }],
+    queryFn: () =>
+      viceHeadsService.getViceHeads({
+        track_id: trackFilter || undefined,
+        search: debouncedSearch || undefined,
+        page,
+        limit,
+      }),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  const viceHeads = useMemo(() => viceHeadsData?.users || [], [viceHeadsData]);
+  const total = useMemo(() => viceHeadsData?.total || 0, [viceHeadsData]);
+
+  const activeCount = useMemo(
+    () => viceHeads.filter((u) => u.is_active).length,
+    [viceHeads]
+  );
+
+  // Prefetch Pagination
+  useEffect(() => {
+    if (page * limit < total) {
+      const nextPage = page + 1;
+      queryClient.prefetchQuery({
+        queryKey: ['vice-heads', { trackFilter, search: debouncedSearch, page: nextPage }],
+        queryFn: () =>
+          viceHeadsService.getViceHeads({
+            track_id: trackFilter || undefined,
+            search: debouncedSearch || undefined,
+            page: nextPage,
+            limit,
+          }),
+        staleTime: 2 * 60 * 1000,
       });
-      setViceHeads(res.data.users || []);
-      setTotal(res.data.total || 0);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load Vice Heads list');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [page, total, limit, trackFilter, debouncedSearch, queryClient]);
 
-  const fetchTracks = async () => {
-    try {
-      const res = await api.get('/tracks');
-      setTracks(res.data.tracks || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchViceHeads();
-  }, [page, trackFilter, search]);
-
-  useEffect(() => {
-    fetchTracks();
+  // Reset Filters
+  const handleResetFilters = useCallback(() => {
+    setSearch('');
+    setTrackFilter('');
+    setPage(1);
   }, []);
 
-  const handleOpenCreate = () => {
+  // Copy Callback
+  const handleCopy = useCallback((text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} ${VICE_HEAD_MESSAGES.COPIED}`);
+  }, []);
+
+  // Modal Handlers
+  const handleOpenCreate = useCallback(() => {
     setEditingViceHead(null);
     setShowPassword(false);
     setFormData({
@@ -121,85 +269,88 @@ export const ViceHeads: React.FC = () => {
       is_active: true,
     });
     setIsModalOpen(true);
-  };
+  }, [tracks]);
 
-  const handleOpenEdit = (viceHead: ViceHeadUser) => {
+  const handleOpenEdit = useCallback((viceHead: ViceHeadUser) => {
     setEditingViceHead(viceHead);
     setShowPassword(false);
     setFormData({
       name: viceHead.name,
       phone: viceHead.phone,
       email: viceHead.email,
-      password: '', // Optional
+      password: '',
       track_id: viceHead.track_id,
       is_active: viceHead.is_active,
     });
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.phone || !formData.email || (!editingViceHead && !formData.password)) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!formData.name || !formData.phone || !formData.email || (!editingViceHead && !formData.password)) {
+        toast.error(VICE_HEAD_MESSAGES.REQUIRED_FIELDS);
+        return;
+      }
 
-    setSubmitting(true);
-    try {
-      if (editingViceHead) {
-        const payload = {
-          name: formData.name,
+      setSubmitting(true);
+      try {
+        const payload: ViceHeadPayload = {
+          name: formData.name.trim(),
           phone: formatToE164(formData.phone),
-          email: formData.email,
+          email: formData.email.trim(),
           role: 'head',
           head_type: 'vice_head',
           track_id: formData.track_id,
           is_active: formData.is_active,
           password: formData.password ? formData.password : undefined,
         };
-        const res = await api.put(`/users/${editingViceHead.id}`, payload);
-        toast.success(res.data.message || 'Vice Head updated successfully');
-      } else {
-        const payload = {
-          name: formData.name,
-          phone: formatToE164(formData.phone),
-          email: formData.email,
-          password: formData.password,
-          role: 'head',
-          head_type: 'vice_head',
-          track_id: formData.track_id,
-        };
-        const res = await api.post('/users', payload);
-        toast.success(res.data.message || 'Vice Head created successfully');
+
+        if (editingViceHead) {
+          const res = await viceHeadsService.updateViceHead(editingViceHead.id, payload);
+          toast.success(res.message || VICE_HEAD_MESSAGES.UPDATE_SUCCESS);
+        } else {
+          const res = await viceHeadsService.createViceHead(payload);
+          toast.success(res.message || VICE_HEAD_MESSAGES.CREATE_SUCCESS);
+        }
+        setIsModalOpen(false);
+        queryClient.invalidateQueries({ queryKey: ['vice-heads'] });
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err.response?.data?.error || VICE_HEAD_MESSAGES.OPERATION_FAILED);
+      } finally {
+        setSubmitting(false);
       }
-      setIsModalOpen(false);
-      fetchViceHeads();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.error || 'Operation failed');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    },
+    [formData, editingViceHead, queryClient]
+  );
 
-  const handleDelete = async (id: string) => {
-    const approved = await confirm({
-      title: 'Delete Vice Head Member',
-      message: 'Are you sure you want to delete this Vice Head? This action is permanent.',
-      confirmText: 'Delete',
-      type: 'danger',
-    });
-    if (!approved) return;
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const approved = await confirm({
+        title: 'Delete Vice Head Member',
+        message: 'Are you sure you want to delete this Vice Head? This action is permanent.',
+        confirmText: 'Delete',
+        type: 'danger',
+      });
+      if (!approved) return;
 
-    try {
-      const res = await api.delete(`/users/${id}`);
-      toast.success(res.data.message || 'Vice Head deleted successfully');
-      fetchViceHeads();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.error || 'Failed to delete Vice Head');
-    }
-  };
+      setDeletingId(id);
+      try {
+        const res = await viceHeadsService.deleteViceHead(id);
+        toast.success(res.message || VICE_HEAD_MESSAGES.DELETE_SUCCESS);
+        queryClient.invalidateQueries({ queryKey: ['vice-heads'] });
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err.response?.data?.error || VICE_HEAD_MESSAGES.DELETE_FAILED);
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [confirm, queryClient]
+  );
+
+  const hasActiveFilters = Boolean(search || trackFilter);
 
   return (
     <div className="space-y-6">
@@ -207,21 +358,74 @@ export const ViceHeads: React.FC = () => {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Vice Heads Management</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight">Vice Heads Management</h2>
+            {total > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-semibold">
+                {total}
+              </span>
+            )}
+          </div>
           <p className="text-neutral-400 text-sm mt-1">
             {isLeader ? 'Create, manage, and assign tracks to Vice Heads.' : 'View Vice Heads and their assigned tracks.'}
           </p>
         </div>
-        
-        {isLeader && (
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Vice Head</span>
-          </button>
-        )}
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {viceHeads.length > 0 && (
+            <button
+              onClick={() => exportViceHeadsToCSV(viceHeads)}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-750 text-neutral-700 dark:text-neutral-200 text-sm font-semibold rounded-btn transition-colors cursor-pointer"
+              title="Export Current List to CSV"
+            >
+              <Download className="w-4 h-4 text-neutral-500" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </button>
+          )}
+
+          {isLeader && (
+            <button
+              onClick={handleOpenCreate}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Vice Head</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Analytics Banner Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 p-3.5 rounded-card flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center shrink-0">
+            <Users className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Total Vice Heads</p>
+            <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{total}</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 p-3.5 rounded-card flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+            <UserCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Active (This Page)</p>
+            <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{activeCount}</p>
+          </div>
+        </div>
+
+        <div className="col-span-2 sm:col-span-1 bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 p-3.5 rounded-card flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex items-center justify-center shrink-0">
+            <Layers className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Total Tracks</p>
+            <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{tracks.length}</p>
+          </div>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -236,8 +440,16 @@ export const ViceHeads: React.FC = () => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-brand"
+            className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2 pl-9 pr-8 text-xs focus:outline-none focus:border-brand"
           />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -255,18 +467,34 @@ export const ViceHeads: React.FC = () => {
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+
+          {hasActiveFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+            >
+              <FilterX className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Loader, Empty and Table-to-Card Grid */}
+      {/* Loader, Empty and Table View */}
       {loading ? (
         <SkeletonLoader variant="table" count={5} />
       ) : viceHeads.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No Vice Heads Found"
-          description={trackFilter || search ? "No vice heads match your filters." : "No vice head members registered."}
-          action={isLeader ? { label: "Add Vice Head", icon: Plus, onClick: handleOpenCreate } : undefined}
+          description={hasActiveFilters ? "No vice heads match your filters." : "No vice head members registered."}
+          action={
+            hasActiveFilters
+              ? { label: "Clear Filters", icon: FilterX, onClick: handleResetFilters }
+              : isLeader
+              ? { label: "Add Vice Head", icon: Plus, onClick: handleOpenCreate }
+              : undefined
+          }
         />
       ) : (
         <div className="space-y-4">
@@ -288,8 +516,8 @@ export const ViceHeads: React.FC = () => {
                     <tr key={viceHead.id} className="hover:bg-neutral-50/50 dark:hover:bg-[#182235]/40 transition-colors">
                       <td className="px-6 py-4.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold">
-                            {viceHead.name.charAt(0).toUpperCase()}
+                          <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-xs">
+                            {getInitials(viceHead.name)}
                           </div>
                           <div>
                             <p className="font-semibold text-neutral-900 dark:text-neutral-100">{viceHead.name}</p>
@@ -302,10 +530,27 @@ export const ViceHeads: React.FC = () => {
                           {viceHead.tracks?.name || 'Unassigned'}
                         </span>
                       </td>
-                      <td className="px-6 py-4.5 space-y-0.5 text-xs">
-                        <p className="text-neutral-900 dark:text-neutral-200 font-semibold">{viceHead.phone}</p>
-                        <p className="text-neutral-455 dark:text-neutral-400">{viceHead.email}</p>
+                      
+                      {/* Clickable Copy-to-Clipboard Contact Info */}
+                      <td className="px-6 py-4.5 space-y-1 text-xs">
+                        <button
+                          onClick={() => handleCopy(viceHead.phone, 'Phone number')}
+                          className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-200 font-semibold hover:text-brand transition-colors cursor-pointer group"
+                          title="Click to copy phone"
+                        >
+                          <span>{viceHead.phone}</span>
+                          <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400" />
+                        </button>
+                        <button
+                          onClick={() => handleCopy(viceHead.email, 'Email address')}
+                          className="flex items-center gap-1.5 text-neutral-455 dark:text-neutral-400 hover:text-brand transition-colors cursor-pointer group"
+                          title="Click to copy email"
+                        >
+                          <span>{viceHead.email}</span>
+                          <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400" />
+                        </button>
                       </td>
+
                       <td className="px-6 py-4.5">
                         {viceHead.is_active ? (
                           <span className="flex items-center gap-1.5 w-fit px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
@@ -322,14 +567,16 @@ export const ViceHeads: React.FC = () => {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleOpenEdit(viceHead)}
-                              className="p-1.5 text-neutral-400 hover:text-brand hover:bg-neutral-100 dark:hover:bg-neutral-850 rounded-btn transition-colors cursor-pointer"
+                              disabled={deletingId === viceHead.id}
+                              className="p-1.5 text-neutral-400 hover:text-brand hover:bg-neutral-100 dark:hover:bg-neutral-850 rounded-btn transition-colors cursor-pointer disabled:opacity-50"
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(viceHead.id)}
-                              className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 dark:hover:bg-neutral-850 rounded-btn transition-colors cursor-pointer"
+                              disabled={deletingId === viceHead.id}
+                              className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 dark:hover:bg-neutral-850 rounded-btn transition-colors cursor-pointer disabled:opacity-50"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -349,7 +596,7 @@ export const ViceHeads: React.FC = () => {
             {viceHeads.map((viceHead) => (
               <MobileEntityCard
                 key={viceHead.id}
-                avatarInitials={viceHead.name.charAt(0).toUpperCase()}
+                avatarInitials={getInitials(viceHead.name)}
                 title={viceHead.name}
                 subtitle={`ID: ${viceHead.id.substring(0, 8)}`}
                 badges={[
@@ -413,7 +660,10 @@ export const ViceHeads: React.FC = () => {
 
       {/* Create / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
+        >
           <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden">
             <h3 className="text-lg font-bold">{editingViceHead ? 'Edit Vice Head' : 'Add New Vice Head'}</h3>
             <p className="text-xs text-neutral-400 mt-1 mb-5">
@@ -537,7 +787,7 @@ export const ViceHeads: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : editingViceHead ? 'Save Changes' : 'Create Vice Head'}
                 </button>
@@ -549,4 +799,5 @@ export const ViceHeads: React.FC = () => {
     </div>
   );
 };
+
 export default ViceHeads;
