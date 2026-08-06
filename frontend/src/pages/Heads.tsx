@@ -207,7 +207,15 @@ export const Heads: React.FC = () => {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Heads Management</h2>
+          <div className="flex items-center gap-3">
+  <h2 className="text-2xl font-bold tracking-tight">
+    Heads Management
+  </h2>
+
+  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+    {total} Heads
+  </span>
+</div>
           <p className="text-neutral-400 text-sm mt-1">
             {isLeader ? 'Create, manage, and assign tracks to Heads.' : 'View Heads and their assigned tracks.'}
           </p>
@@ -216,10 +224,10 @@ export const Heads: React.FC = () => {
         {isLeader && (
           <button
             onClick={handleOpenCreate}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors shrink-0 cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Head</span>
+           <span>Add New Head</span>
           </button>
         )}
       </div>
@@ -230,12 +238,16 @@ export const Heads: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input
             type="text"
-            placeholder="Search name, phone, email..."
+            placeholder="Search by Name, Email or Phone Number..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+           onChange={(e) => {
+  const value = e.target.value;
+
+  if (value.length >= 2 || value.length === 0) {
+    setSearch(value);
+    setPage(1);
+  }
+}}
             className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-brand"
           />
         </div>
@@ -271,6 +283,11 @@ export const Heads: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
+        <div className="flex justify-between items-center">
+  <p className="text-sm text-gray-500">
+    Total Results: {total}
+  </p>
+</div>
           <div className="hidden md:block bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -279,16 +296,20 @@ export const Heads: React.FC = () => {
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Track</th>
                     <th className="px-6 py-4">Contact Info</th>
+                    <th className="px-6 py-4">Created Date</th>
                     <th className="px-6 py-4">Status</th>
                     {isLeader && <th className="px-6 py-4 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
                   {heads.map((head) => (
-                    <tr key={head.id} className="hover:bg-neutral-50/50 dark:hover:bg-[#182235]/40 transition-colors">
+                    <tr
+  key={head.id}
+ className="hover:bg-indigo-50 dark:hover:bg-[#222B45] hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+>
                       <td className="px-6 py-4.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center justify-center font-bold shadow-md">
                             {head.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -299,23 +320,26 @@ export const Heads: React.FC = () => {
                       </td>
                       <td className="px-6 py-4.5">
                         <span className="font-bold px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-600 dark:text-neutral-300">
-                          {head.tracks?.name || 'Unassigned'}
+                          {head.tracks?.name || 'No Track Assigned'}
                         </span>
                       </td>
                       <td className="px-6 py-4.5 space-y-0.5 text-xs">
+                        <td className="px-6 py-4.5 text-sm text-neutral-500">
+  {new Date(head.created_at).toLocaleDateString()}
+</td>
                         <p className="text-neutral-900 dark:text-neutral-200 font-semibold">{head.phone}</p>
                         <p className="text-neutral-450 dark:text-neutral-400">{head.email}</p>
                       </td>
                       <td className="px-6 py-4.5">
                         {head.is_active ? (
-                          <span className="flex items-center gap-1.5 w-fit px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1.5 w-fit px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
-                            Inactive
-                          </span>
-                        )}
+  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+    🟢 Active
+  </span>
+) : (
+  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+    🔴 Inactive
+  </span>
+)}
                       </td>
                       {isLeader && (
                         <td className="px-6 py-4.5 text-right">
@@ -357,7 +381,7 @@ export const Heads: React.FC = () => {
                     key="track"
                     className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
                   >
-                    {head.tracks?.name || 'Unassigned'}
+                    {head.tracks?.name || 'No Track Assigned'}
                   </span>,
                   <span
                     key="status"
@@ -539,7 +563,11 @@ export const Heads: React.FC = () => {
                   disabled={submitting}
                   className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors cursor-pointer"
                 >
-                  {submitting ? 'Submitting...' : editingHead ? 'Save Changes' : 'Create Head'}
+                  {submitting
+  ? 'Please Wait...'
+  : editingHead
+  ? 'Update Head'
+  : 'Create New Head'}
                 </button>
               </div>
             </form>
