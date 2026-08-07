@@ -10,6 +10,7 @@ import memberRouter from "./routes/member.routes";
 import evaluationRouter from "./routes/evaluation.routes";
 import logRouter from "./routes/log.routes";
 import dashboardRouter from "./routes/dashboard.routes";
+import eventRouter from "./routes/event.routes";
 import { sessionRateLimiter } from "./middlewares/rateLimit.middleware";
 
 dotenv.config();
@@ -48,6 +49,8 @@ app.use("/api/technical-members", memberRouter);
 app.use("/api/evaluations", evaluationRouter);
 app.use("/api/activity-logs", logRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/events", eventRouter);
+
 
 // Global Error Handler
 app.use(
