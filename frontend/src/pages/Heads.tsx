@@ -1,12 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useConfirm } from '../contexts/ConfirmContext';
-import api from '../services/api';
-import { toast } from 'sonner';
-import { Users, Plus, Edit, Trash2, ToggleLeft, ToggleRight, Search, Key, Phone, Mail, Eye, EyeOff } from 'lucide-react';
-import { MobileEntityCard } from '../components/common/MobileEntityCard';
-import { EmptyState } from '../components/common/EmptyState';
-import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { useConfirm } from "../contexts/ConfirmContext";
+import api from "../services/api";
+import { toast } from "sonner";
+import {
+  Users,
+  Plus,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Search,
+  Key,
+  Phone,
+  Mail,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { MobileEntityCard } from "../components/common/MobileEntityCard";
+import { EmptyState } from "../components/common/EmptyState";
+import { SkeletonLoader } from "../components/common/SkeletonLoader";
 
 interface Track {
   id: string;
@@ -30,10 +43,10 @@ interface HeadUser {
 
 const formatToE164 = (input: string): string => {
   const cleaned = input.trim();
-  if (cleaned.startsWith('+')) {
+  if (cleaned.startsWith("+")) {
     return cleaned;
   }
-  if (cleaned.startsWith('0')) {
+  if (cleaned.startsWith("0")) {
     return `+20${cleaned.substring(1)}`;
   }
   return `+20${cleaned}`;
@@ -42,15 +55,15 @@ const formatToE164 = (input: string): string => {
 export const Heads: React.FC = () => {
   const { user: currentUser } = useAuth();
   const confirm = useConfirm();
-  const isLeader = currentUser?.role === 'leader';
+  const isLeader = currentUser?.role === "leader";
 
   const [heads, setHeads] = useState<HeadUser[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filtering & Pagination
-  const [search, setSearch] = useState('');
-  const [trackFilter, setTrackFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [trackFilter, setTrackFilter] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit] = useState(10);
@@ -60,11 +73,11 @@ export const Heads: React.FC = () => {
   const [editingHead, setEditingHead] = useState<HeadUser | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    password: '',
-    track_id: '',
+    name: "",
+    phone: "",
+    email: "",
+    password: "",
+    track_id: "",
     is_active: true,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -72,10 +85,10 @@ export const Heads: React.FC = () => {
   const fetchHeads = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/users', {
+      const res = await api.get("/users", {
         params: {
-          role: 'head',
-          head_type: 'head',
+          role: "head",
+          head_type: "head",
           track_id: trackFilter || undefined,
           search: search || undefined,
           page,
@@ -86,7 +99,7 @@ export const Heads: React.FC = () => {
       setTotal(res.data.total || 0);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load Heads list');
+      toast.error("Failed to load Heads list");
     } finally {
       setLoading(false);
     }
@@ -94,7 +107,7 @@ export const Heads: React.FC = () => {
 
   const fetchTracks = async () => {
     try {
-      const res = await api.get('/tracks');
+      const res = await api.get("/tracks");
       setTracks(res.data.tracks || []);
     } catch (err) {
       console.error(err);
@@ -113,11 +126,11 @@ export const Heads: React.FC = () => {
     setEditingHead(null);
     setShowPassword(false);
     setFormData({
-      name: '',
-      phone: '',
-      email: '',
-      password: '',
-      track_id: tracks[0]?.id || '',
+      name: "",
+      phone: "",
+      email: "",
+      password: "",
+      track_id: tracks[0]?.id || "",
       is_active: true,
     });
     setIsModalOpen(true);
@@ -130,7 +143,7 @@ export const Heads: React.FC = () => {
       name: head.name,
       phone: head.phone,
       email: head.email,
-      password: '', // Optional
+      password: "", // Optional
       track_id: head.track_id,
       is_active: head.is_active,
     });
@@ -139,8 +152,13 @@ export const Heads: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone || !formData.email || (!editingHead && !formData.password)) {
-      toast.error('Please fill in all required fields');
+    if (
+      !formData.name ||
+      !formData.phone ||
+      !formData.email ||
+      (!editingHead && !formData.password)
+    ) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -151,32 +169,32 @@ export const Heads: React.FC = () => {
           name: formData.name,
           phone: formatToE164(formData.phone),
           email: formData.email,
-          role: 'head',
-          head_type: 'head',
+          role: "head",
+          head_type: "head",
           track_id: formData.track_id,
           is_active: formData.is_active,
           password: formData.password ? formData.password : undefined,
         };
         const res = await api.put(`/users/${editingHead.id}`, payload);
-        toast.success(res.data.message || 'Head updated successfully');
+        toast.success(res.data.message || "Head updated successfully");
       } else {
         const payload = {
           name: formData.name,
           phone: formatToE164(formData.phone),
           email: formData.email,
           password: formData.password,
-          role: 'head',
-          head_type: 'head',
+          role: "head",
+          head_type: "head",
           track_id: formData.track_id,
         };
-        const res = await api.post('/users', payload);
-        toast.success(res.data.message || 'Head created successfully');
+        const res = await api.post("/users", payload);
+        toast.success(res.data.message || "Head created successfully");
       }
       setIsModalOpen(false);
       fetchHeads();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.error || 'Operation failed');
+      toast.error(err.response?.data?.error || "Operation failed");
     } finally {
       setSubmitting(false);
     }
@@ -184,50 +202,52 @@ export const Heads: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     const approved = await confirm({
-      title: 'Delete Head Member',
-      message: 'Are you sure you want to delete this Head? This action is permanent.',
-      confirmText: 'Delete',
-      type: 'danger',
+      title: "Delete Head Member",
+      message:
+        "Are you sure you want to delete this Head? This action is permanent.",
+      confirmText: "Delete",
+      type: "danger",
     });
     if (!approved) return;
 
     try {
       const res = await api.delete(`/users/${id}`);
-      toast.success(res.data.message || 'Head deleted successfully');
+      toast.success(res.data.message || "Head deleted successfully");
       fetchHeads();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.error || 'Failed to delete Head');
+      toast.error(err.response?.data?.error || "Failed to delete Head");
     }
   };
 
   return (
     <div className="space-y-6">
-      
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-  <h2 className="text-2xl font-bold tracking-tight">
-    Heads Management
-  </h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Heads Management
+            </h2>
 
-  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-    {total} Heads
-  </span>
-</div>
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+              {total} Heads
+            </span>
+          </div>
           <p className="text-neutral-400 text-sm mt-1">
-            {isLeader ? 'Create, manage, and assign tracks to Heads.' : 'View Heads and their assigned tracks.'}
+            {isLeader
+              ? "Create, manage, and assign tracks to Heads."
+              : "View Heads and their assigned tracks."}
           </p>
         </div>
-        
+
         {isLeader && (
           <button
             onClick={handleOpenCreate}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-           <span>Add New Head</span>
+            <span>Add New Head</span>
           </button>
         )}
       </div>
@@ -240,20 +260,22 @@ export const Heads: React.FC = () => {
             type="text"
             placeholder="Search by Name, Email or Phone Number..."
             value={search}
-           onChange={(e) => {
-  const value = e.target.value;
+            onChange={(e) => {
+              const value = e.target.value;
 
-  if (value.length >= 2 || value.length === 0) {
-    setSearch(value);
-    setPage(1);
-  }
-}}
+              if (value.length >= 2 || value.length === 0) {
+                setSearch(value);
+                setPage(1);
+              }
+            }}
             className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-brand"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <span className="text-xs text-neutral-450 dark:text-neutral-500 font-medium shrink-0">Track:</span>
+          <span className="text-xs text-neutral-450 dark:text-neutral-500 font-medium shrink-0">
+            Track:
+          </span>
           <select
             value={trackFilter}
             onChange={(e) => {
@@ -264,7 +286,9 @@ export const Heads: React.FC = () => {
           >
             <option value="">All Tracks</option>
             {tracks.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
             ))}
           </select>
         </div>
@@ -277,17 +301,23 @@ export const Heads: React.FC = () => {
         <EmptyState
           icon={Users}
           title="No Heads Found"
-          description={trackFilter || search ? "No heads match your filters." : "No head members registered."}
-          action={isLeader ? { label: "Add Head", icon: Plus, onClick: handleOpenCreate } : undefined}
+          description={
+            trackFilter || search
+              ? "No heads match your filters."
+              : "No head members registered."
+          }
+          action={
+            isLeader
+              ? { label: "Add Head", icon: Plus, onClick: handleOpenCreate }
+              : undefined
+          }
         />
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
-        <div className="flex justify-between items-center">
-  <p className="text-sm text-gray-500">
-    Total Results: {total}
-  </p>
-</div>
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-500">Total Results: {total}</p>
+          </div>
           <div className="hidden md:block bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -298,48 +328,58 @@ export const Heads: React.FC = () => {
                     <th className="px-6 py-4">Contact Info</th>
                     <th className="px-6 py-4">Created Date</th>
                     <th className="px-6 py-4">Status</th>
-                    {isLeader && <th className="px-6 py-4 text-right">Actions</th>}
+                    {isLeader && (
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
                   {heads.map((head) => (
                     <tr
-  key={head.id}
- className="hover:bg-indigo-50 dark:hover:bg-[#222B45] hover:shadow-md hover:scale-[1.01] transition-all duration-300"
->
+                      key={head.id}
+                      className="hover:bg-indigo-50 dark:hover:bg-[#222B45] hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                    >
                       <td className="px-6 py-4.5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center justify-center font-bold shadow-md">
                             {head.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-neutral-900 dark:text-neutral-100">{head.name}</p>
-                            <p className="text-[10px] text-neutral-400 mt-0.5">ID: {head.id.substring(0, 8)}</p>
+                            <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                              {head.name}
+                            </p>
+                            <p className="text-[10px] text-neutral-400 mt-0.5">
+                              ID: {head.id.substring(0, 8)}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4.5">
                         <span className="font-bold px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-600 dark:text-neutral-300">
-                          {head.tracks?.name || 'No Track Assigned'}
+                          {head.tracks?.name || "No Track Assigned"}
                         </span>
                       </td>
                       <td className="px-6 py-4.5 space-y-0.5 text-xs">
-                        <td className="px-6 py-4.5 text-sm text-neutral-500">
-  {new Date(head.created_at).toLocaleDateString()}
-</td>
-                        <p className="text-neutral-900 dark:text-neutral-200 font-semibold">{head.phone}</p>
-                        <p className="text-neutral-450 dark:text-neutral-400">{head.email}</p>
+                        <p className="text-neutral-900 dark:text-neutral-200 font-semibold">
+                          {head.phone}
+                        </p>
+                        <p className="text-neutral-450 dark:text-neutral-400">
+                          {head.email}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4.5 text-sm text-neutral-500">
+                        {new Date(head.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4.5">
                         {head.is_active ? (
-  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
-    🟢 Active
-  </span>
-) : (
-  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
-    🔴 Inactive
-  </span>
-)}
+                          <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                            🟢 Active
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+                            🔴 Inactive
+                          </span>
+                        )}
                       </td>
                       {isLeader && (
                         <td className="px-6 py-4.5 text-right">
@@ -381,28 +421,37 @@ export const Heads: React.FC = () => {
                     key="track"
                     className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
                   >
-                    {head.tracks?.name || 'No Track Assigned'}
+                    {head.tracks?.name || "No Track Assigned"}
                   </span>,
                   <span
                     key="status"
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                       head.is_active
-                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                        : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                     }`}
                   >
-                    {head.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                    {head.is_active ? "Active" : "Inactive"}
+                  </span>,
                 ]}
                 metadata={[
-                  { label: 'Phone', value: head.phone, icon: Phone },
-                  { label: 'Email', value: head.email, icon: Mail },
+                  { label: "Phone", value: head.phone, icon: Phone },
+                  { label: "Email", value: head.email, icon: Mail },
                 ]}
                 actions={
                   isLeader
                     ? [
-                        { label: 'Edit', icon: Edit, onClick: () => handleOpenEdit(head) },
-                        { label: 'Delete', icon: Trash2, onClick: () => handleDelete(head.id), variant: 'danger' }
+                        {
+                          label: "Edit",
+                          icon: Edit,
+                          onClick: () => handleOpenEdit(head),
+                        },
+                        {
+                          label: "Delete",
+                          icon: Trash2,
+                          onClick: () => handleDelete(head.id),
+                          variant: "danger",
+                        },
                       ]
                     : []
                 }
@@ -413,7 +462,10 @@ export const Heads: React.FC = () => {
           {/* Pagination controls */}
           {total > limit && (
             <div className="flex items-center justify-between p-4 bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card text-xs text-neutral-450 dark:text-neutral-400">
-              <p>Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total} records</p>
+              <p>
+                Showing {(page - 1) * limit + 1} to{" "}
+                {Math.min(page * limit, total)} of {total} records
+              </p>
               <div className="flex items-center gap-2">
                 <button
                   disabled={page === 1}
@@ -439,30 +491,41 @@ export const Heads: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white dark:bg-[#111827] border border-neutral-200 dark:border-neutral-800 rounded-card shadow-2xl p-6 overflow-hidden">
-            <h3 className="text-lg font-bold">{editingHead ? 'Edit Head Member' : 'Add New Head Member'}</h3>
+            <h3 className="text-lg font-bold">
+              {editingHead ? "Edit Head Member" : "Add New Head Member"}
+            </h3>
             <p className="text-xs text-neutral-400 mt-1 mb-5">
-              Fill in the user metadata. Auth accounts are configured automatically.
+              Fill in the user metadata. Auth accounts are configured
+              automatically.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">Name</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                    Name
+                  </label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="Full name"
                     className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">Phone</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                    Phone
+                  </label>
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     placeholder="Phone number"
                     className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
                     required
@@ -471,11 +534,15 @@ export const Heads: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">Email Address</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="name@gmail.com"
                   className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
                   required
@@ -484,15 +551,24 @@ export const Heads: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
-                  Password {editingHead && <span className="text-[10px] lowercase text-neutral-500">(Leave blank to keep current)</span>}
+                  Password{" "}
+                  {editingHead && (
+                    <span className="text-[10px] lowercase text-neutral-500">
+                      (Leave blank to keep current)
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder={editingHead ? '••••••••' : 'Password (min 6 chars)'}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    placeholder={
+                      editingHead ? "••••••••" : "Password (min 6 chars)"
+                    }
                     className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:border-brand"
                     required={!editingHead}
                   />
@@ -512,25 +588,38 @@ export const Heads: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">Assigned Track</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                    Assigned Track
+                  </label>
                   <select
                     value={formData.track_id}
-                    onChange={(e) => setFormData({ ...formData, track_id: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, track_id: e.target.value })
+                    }
                     className="w-full bg-neutral-50 dark:bg-[#161F30] border border-neutral-200 dark:border-neutral-800 rounded-input py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand"
                   >
                     {tracks.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 {editingHead && (
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">Account Status</label>
+                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-neutral-400">
+                      Account Status
+                    </label>
                     <div className="flex items-center gap-3 py-2">
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            is_active: !formData.is_active,
+                          })
+                        }
                         className="text-neutral-500 hover:text-brand cursor-pointer"
                       >
                         {formData.is_active ? (
@@ -564,10 +653,10 @@ export const Heads: React.FC = () => {
                   className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-btn shadow-md shadow-brand/10 transition-colors cursor-pointer"
                 >
                   {submitting
-  ? 'Please Wait...'
-  : editingHead
-  ? 'Update Head'
-  : 'Create New Head'}
+                    ? "Please Wait..."
+                    : editingHead
+                      ? "Update Head"
+                      : "Create New Head"}
                 </button>
               </div>
             </form>

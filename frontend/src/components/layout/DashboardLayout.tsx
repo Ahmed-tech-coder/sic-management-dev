@@ -195,7 +195,6 @@ export const DashboardLayout: React.FC = () => {
                 {user.role === "head" && user.head_type === "vice_head"
                   ? "Vice Head"
                   : user.role}
-                {user.track_name && ` • ${user.track_name}`}
               </p>
             </div>
           </div>
