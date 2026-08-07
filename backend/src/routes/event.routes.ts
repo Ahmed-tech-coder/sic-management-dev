@@ -13,19 +13,19 @@ router.get("/", authenticate, getEvents);
 router.post(
   "/",
   authenticate,
-  authorize(["leader", "head", "hr"]),
+  authorize(["leader"]),
   createEvent,
 );
 router.put(
   "/:id",
   authenticate,
-  authorize(["leader", "head", "hr"]),
+  authorize(["leader"]),
   updateEvent,
 );
 router.delete(
   "/:id",
   authenticate,
-  authorize(["leader", "head", "hr"]),
+  authorize(["leader"]),
   deleteEvent,
 );
 

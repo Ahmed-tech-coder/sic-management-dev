@@ -35,10 +35,7 @@ const Events = () => {
   const confirm = useConfirm();
 
   // Roles permitted to create, edit or delete events
-  const isAuthorized =
-    currentUser?.role === "leader" ||
-    currentUser?.role === "head" ||
-    currentUser?.role === "hr";
+  const isAuthorized = currentUser?.role === "leader";
 
   const [eventList, setEventList] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
